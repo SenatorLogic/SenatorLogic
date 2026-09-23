@@ -1,0 +1,84 @@
+<%- include('../partials/header') %>
+
+<div class="section-head">
+  <div>
+    <p class="eyebrow">Administration</p>
+    <h1>Admin</h1>
+  </div>
+  <p>Signed in as <%= currentUser.full_name %></p>
+</div>
+
+<div class="grid two" style="margin-bottom:36px">
+  <div class="card" style="padding:22px">
+    <h3>Members</h3>
+    <p style="color:var(--muted)"><%= members.length %> registered. Edit any profile, set executive offices, grant admin rights.</p>
+    <a class="btn" href="/admin/members">Manage members</a>
+  </div>
+  <div class="card" style="padding:22px">
+    <h3>News &amp; updates</h3>
+    <p style="color:var(--muted)"><%= posts.length %> posted. Share announcements with the chapter.</p>
+    <a class="btn" href="/admin/news/new">Post an update</a>
+    <a class="btn ghost" href="/news">View all</a>
+  </div>
+  <div class="card" style="padding:22px">
+    <h3>Events</h3>
+    <p style="color:var(--muted)"><%= events.length %> on the diary. Meetings, outings and celebrations.</p>
+    <a class="btn" href="/admin/events/new">Add an event</a>
+    <a class="btn ghost" href="/events">View all</a>
+  </div>
+</div>
+
+<section class="section">
+  <h2>Recent updates</h2>
+  <% if (posts.length) { %>
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th>Title</th><th>Posted</th><th>By</th><th></th></tr></thead>
+        <tbody>
+          <% posts.slice(0, 10).forEach((post) => { %>
+            <tr>
+              <td><a href="/news/<%= post.id %>"><%= post.title %></a></td>
+              <td><%= formatDate(post.published_at) %></td>
+              <td><%= post.author_name || '—' %></td>
+              <td class="row-actions">
+                <a class="btn ghost small" href="/admin/news/<%= post.id %>/edit">Edit</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="card empty"><p>Nothing posted yet.</p></div>
+  <% } %>
+</section>
+
+<section class="section">
+  <h2>All events</h2>
+  <% if (events.length) { %>
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th>Event</th><th>Date</th><th>Venue</th><th></th></tr></thead>
+        <tbody>
+          <% events.forEach((event) => { %>
+            <tr>
+              <td><a href="/events/<%= event.id %>"><%= event.title %></a></td>
+              <td>
+                <%= formatDate(event.starts_on) %>
+                <% if (!isUpcoming(event.starts_on)) { %><span class="badge">past</span><% } %>
+              </td>
+              <td><%= event.location || '—' %></td>
+              <td class="row-actions">
+                <a class="btn ghost small" href="/admin/events/<%= event.id %>/edit">Edit</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <div class="card empty"><p>No events yet.</p></div>
+  <% } %>
+</section>
+
+<%- include('../partials/footer') %>

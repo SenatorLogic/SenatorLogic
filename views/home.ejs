@@ -1,0 +1,94 @@
+<%- include('partials/header') %>
+
+<section class="hero">
+  <img src="/img/logo.png" alt="OBA Youth Abuja logo" width="150" height="205">
+  <div>
+    <p class="eyebrow">Obowo Believers Association</p>
+    <h1>OBA Youth Abuja</h1>
+    <p>
+      The home of Obowo Believers Association youths in Abuja. Create your
+      profile, find brothers and sisters from your community, and keep up with
+      our meetings and events.
+    </p>
+    <div class="hero-actions">
+      <% if (currentUser) { %>
+        <a class="btn" href="/members">Browse members</a>
+        <a class="btn ghost" href="/profile">My profile</a>
+      <% } else { %>
+        <a class="btn" href="/register">Create your profile</a>
+        <a class="btn ghost" href="/login">Sign in</a>
+      <% } %>
+    </div>
+    <div class="hero-stats">
+      <div><strong><%= memberCount %></strong><span>Registered <%= memberCount === 1 ? 'member' : 'members' %></span></div>
+      <div><strong><%= executives.length %></strong><span>Executive <%= executives.length === 1 ? 'officer' : 'officers' %></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Leadership</p>
+      <h2>Our executives</h2>
+    </div>
+    <p>The officers serving OBA Youth Abuja</p>
+  </div>
+
+  <% if (executives.length) { %>
+    <div class="grid exco">
+      <% executives.forEach((person) => { %>
+        <%- include('partials/person-card', { person }) %>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="card empty">
+      <p>No executives have been listed yet.</p>
+      <% if (currentUser && currentUser.is_admin) { %>
+        <a class="btn" href="/admin/members">Assign offices</a>
+      <% } %>
+    </div>
+  <% } %>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Diary</p>
+      <h2>Upcoming events</h2>
+    </div>
+    <a class="btn ghost small" href="/events">All events</a>
+  </div>
+
+  <% if (events.length) { %>
+    <div class="grid two">
+      <% events.forEach((event) => { %>
+        <%- include('partials/event-item', { event }) %>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="card empty"><p>No events have been scheduled yet.</p></div>
+  <% } %>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Noticeboard</p>
+      <h2>News &amp; updates</h2>
+    </div>
+    <a class="btn ghost small" href="/news">All updates</a>
+  </div>
+
+  <% if (news.length) { %>
+    <div class="grid two">
+      <% news.forEach((post) => { %>
+        <%- include('partials/post-item', { post }) %>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="card empty"><p>No updates have been posted yet.</p></div>
+  <% } %>
+</section>
+
+<%- include('partials/footer') %>

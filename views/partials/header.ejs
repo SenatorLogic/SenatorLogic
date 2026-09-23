@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= title %> · <%= siteName %></title>
+<meta name="description" content="Member database of OBA Youth Abuja — the Abuja youth wing of the Obowo Believers Association.">
+<meta name="theme-color" content="#d61f26">
+<link rel="icon" href="/img/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/img/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/">
+      <img src="/img/logo.png" alt="">
+      <span>OBA Youth Abuja
+        <small>Obowo Believers Association</small>
+      </span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-nav" aria-label="Menu">☰</button>
+
+    <nav class="nav" id="main-nav">
+      <a href="/" class="<%= path === '/' ? 'active' : '' %>">Home</a>
+      <a href="/news" class="<%= path.startsWith('/news') ? 'active' : '' %>">News</a>
+      <a href="/events" class="<%= path.startsWith('/events') ? 'active' : '' %>">Events</a>
+      <% if (currentUser) { %>
+        <a href="/members" class="<%= path.startsWith('/members') ? 'active' : '' %>">Members</a>
+        <a href="/birthdays" class="<%= path === '/birthdays' ? 'active' : '' %>">Birthdays</a>
+        <a href="/profile" class="<%= path.startsWith('/profile') ? 'active' : '' %>">My profile</a>
+        <% if (currentUser.is_admin) { %>
+          <a href="/admin" class="<%= path.startsWith('/admin') ? 'active' : '' %>">Admin</a>
+        <% } %>
+        <form method="post" action="/logout" style="display:inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit">Sign out</button>
+        </form>
+      <% } else { %>
+        <a href="/login" class="<%= path === '/login' ? 'active' : '' %>">Sign in</a>
+        <a href="/register" class="btn small">Join</a>
+      <% } %>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <% if (typeof flash !== 'undefined' && flash) { %>
+      <div class="alert <%= flash.type === 'error' ? 'error' : 'success' %>"><%= flash.message %></div>
+    <% } %>

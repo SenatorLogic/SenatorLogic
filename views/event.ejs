@@ -1,0 +1,50 @@
+<%- include('partials/header') %>
+
+<article class="card" style="max-width:760px;margin:0 auto;padding:30px">
+  <p class="eyebrow"><%= isUpcoming(event.starts_on) ? 'Upcoming event' : 'Past event' %></p>
+  <h1><%= event.title %></h1>
+
+  <ul class="facts" style="margin-top:18px">
+    <li>
+      <span class="label">Date</span>
+      <span class="value"><%= formatDate(event.starts_on) %></span>
+    </li>
+    <% if (event.starts_at) { %>
+      <li>
+        <span class="label">Time</span>
+        <span class="value"><%= formatTime(event.starts_at) %></span>
+      </li>
+    <% } %>
+    <% if (event.location) { %>
+      <li>
+        <span class="label">Venue</span>
+        <span class="value"><%= event.location %></span>
+      </li>
+    <% } %>
+  </ul>
+
+  <% if (event.description) { %>
+    <div class="prose" style="margin-top:22px">
+      <% paragraphs(event.description).forEach((block) => { %>
+        <p><%= block %></p>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <% if (currentUser && currentUser.is_admin) { %>
+    <div class="form-actions">
+      <a class="btn ghost" href="/admin/events/<%= event.id %>/edit">Edit</a>
+      <form method="post" action="/admin/events/<%= event.id %>/delete"
+            onsubmit="return confirm('Delete this event permanently?')">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn danger" type="submit">Delete</button>
+      </form>
+    </div>
+  <% } %>
+</article>
+
+<p style="text-align:center;margin-top:24px">
+  <a class="btn ghost" href="/events">All events</a>
+</p>
+
+<%- include('partials/footer') %>

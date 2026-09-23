@@ -1,0 +1,24 @@
+# One-click deploy for Render (https://render.com).
+# The free plan does not include a persistent disk — use the starter plan or
+# larger so the member database survives a restart.
+services:
+  - type: web
+    name: oba-youth-abuja
+    runtime: node
+    plan: starter
+    buildCommand: npm ci --omit=dev
+    startCommand: node src/server.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_FILE
+        value: /var/data/oba.db
+      - key: ADMIN_EMAIL
+        sync: false
+    disk:
+      name: oba-data
+      mountPath: /var/data
+      sizeGB: 1

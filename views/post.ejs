@@ -1,0 +1,32 @@
+<%- include('partials/header') %>
+
+<article class="card" style="max-width:760px;margin:0 auto;padding:30px">
+  <p class="eyebrow">Update</p>
+  <h1><%= post.title %></h1>
+  <p style="color:var(--muted);margin:0 0 20px">
+    <%= formatDate(post.published_at) %><% if (post.author_name) { %> · posted by <%= post.author_name %><% } %>
+  </p>
+
+  <div class="prose">
+    <% paragraphs(post.body).forEach((block) => { %>
+      <p><%= block %></p>
+    <% }) %>
+  </div>
+
+  <% if (currentUser && currentUser.is_admin) { %>
+    <div class="form-actions">
+      <a class="btn ghost" href="/admin/news/<%= post.id %>/edit">Edit</a>
+      <form method="post" action="/admin/news/<%= post.id %>/delete"
+            onsubmit="return confirm('Delete this update permanently?')">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn danger" type="submit">Delete</button>
+      </form>
+    </div>
+  <% } %>
+</article>
+
+<p style="text-align:center;margin-top:24px">
+  <a class="btn ghost" href="/news">All updates</a>
+</p>
+
+<%- include('partials/footer') %>

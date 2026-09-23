@@ -1,0 +1,40 @@
+<%- include('../partials/header') %>
+
+<div class="card form-card wide">
+  <p class="eyebrow">News &amp; updates</p>
+  <h1><%= post ? 'Edit update' : 'Post an update' %></h1>
+
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+
+  <form method="post" action="<%= post ? `/admin/news/${post.id}/edit` : '/admin/news/new' %>" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="field">
+      <label for="title">Title</label>
+      <input type="text" id="title" name="title" value="<%= values.title || '' %>" required autofocus>
+    </div>
+
+    <div class="field">
+      <label for="body">Update</label>
+      <textarea id="body" name="body" style="min-height:260px" required><%= values.body || '' %></textarea>
+      <p class="hint">Leave a blank line between paragraphs.</p>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn" type="submit"><%= post ? 'Save changes' : 'Post update' %></button>
+      <a class="btn ghost" href="/news">Cancel</a>
+      <% if (post) { %>
+        <button class="btn danger spacer" type="submit" form="delete-post">Delete</button>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (post) { %>
+    <form id="delete-post" method="post" action="/admin/news/<%= post.id %>/delete"
+          onsubmit="return confirm('Delete this update permanently?')">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    </form>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,82 @@
+<%# The profile fields, shared by the member form and the admin form. %>
+<div class="field">
+  <label for="photo">Photo</label>
+  <% if (hasPhoto) { %>
+    <p style="margin:0 0 10px">
+      <img src="/photo/<%= values.id %>" alt="Current photo" class="avatar sm" style="display:inline-grid">
+    </p>
+  <% } %>
+  <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp">
+  <p class="hint">JPG, PNG or WEBP, up to 4 MB. Leave empty to keep the current photo.</p>
+  <% if (hasPhoto) { %>
+    <label class="checkbox" style="margin-top:10px">
+      <input type="checkbox" name="remove_photo" value="yes"> Remove the current photo
+    </label>
+  <% } %>
+</div>
+
+<div class="field">
+  <label for="full_name">Full name</label>
+  <input type="text" id="full_name" name="full_name" value="<%= values.full_name || '' %>" required>
+</div>
+
+<div class="field-row">
+  <div class="field">
+    <label for="phone">Phone number</label>
+    <input type="tel" id="phone" name="phone" value="<%= values.phone || '' %>" placeholder="080…">
+  </div>
+  <div class="field">
+    <label for="gender">Gender</label>
+    <select id="gender" name="gender">
+      <option value="">Not stated</option>
+      <% genders.forEach((g) => { %>
+        <option value="<%= g %>" <%= values.gender === g ? 'selected' : '' %>><%= g %></option>
+      <% }) %>
+    </select>
+  </div>
+</div>
+
+<div class="field-row">
+  <div class="field">
+    <label for="occupation">Job or occupation</label>
+    <input type="text" id="occupation" name="occupation" value="<%= values.occupation || '' %>"
+           placeholder="e.g. Civil engineer">
+  </div>
+  <div class="field">
+    <label for="birthday">Birthday</label>
+    <input type="date" id="birthday" name="birthday" value="<%= values.birthday || '' %>">
+    <p class="hint">Only the day and month are shown to others.</p>
+  </div>
+</div>
+
+<div class="field">
+  <label for="relationship_status">Relationship status</label>
+  <select id="relationship_status" name="relationship_status">
+    <option value="">Not stated</option>
+    <% relationshipStatuses.forEach((s) => { %>
+      <option value="<%= s %>" <%= values.relationship_status === s ? 'selected' : '' %>><%= s %></option>
+    <% }) %>
+  </select>
+</div>
+
+<div class="field">
+  <label for="address">Address in Abuja</label>
+  <input type="text" id="address" name="address" value="<%= values.address || '' %>"
+         placeholder="e.g. 12 Gwarinpa Estate, Abuja">
+</div>
+
+<div class="field">
+  <label for="obowo_address">Home address in Obowo</label>
+  <input type="text" id="obowo_address" name="obowo_address" list="obowo-communities"
+         value="<%= values.obowo_address || '' %>"
+         placeholder="e.g. Umuariam, Obowo LGA, Imo State">
+  <datalist id="obowo-communities">
+    <% communities.forEach((c) => { %><option value="<%= c %>, Obowo LGA, Imo State"></option><% }) %>
+  </datalist>
+  <p class="hint">Your village or autonomous community back home.</p>
+</div>
+
+<div class="field">
+  <label for="about">About you</label>
+  <textarea id="about" name="about" placeholder="A short introduction for other members."><%= values.about || '' %></textarea>
+</div>

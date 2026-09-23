@@ -1,0 +1,57 @@
+<%- include('../partials/header') %>
+
+<div class="section-head">
+  <div>
+    <p class="eyebrow">Administration</p>
+    <h1>Manage members</h1>
+  </div>
+  <a class="btn ghost" href="/admin">Back to admin</a>
+</div>
+
+<div class="card table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Member</th>
+        <th>Office</th>
+        <th>Contact</th>
+        <th>Obowo home</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% members.forEach((person) => { %>
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:12px">
+              <%- include('../partials/avatar', { person, avatarSize: 'sm' }) %>
+              <div>
+                <strong><%= person.full_name %></strong>
+                <% if (person.is_admin) { %><span class="badge red">admin</span><% } %>
+                <br><span style="color:var(--muted);font-size:.85rem"><%= person.occupation || '—' %></span>
+              </div>
+            </div>
+          </td>
+          <td><%= person.office || '—' %></td>
+          <td>
+            <%= person.email %>
+            <% if (person.phone) { %><br><span style="color:var(--muted)"><%= person.phone %></span><% } %>
+          </td>
+          <td><%= person.obowo_address || '—' %></td>
+          <td class="row-actions">
+            <a class="btn ghost small" href="/admin/members/<%= person.id %>/edit">Edit</a>
+            <% if (person.id !== currentUser.id) { %>
+              <form method="post" action="/admin/members/<%= person.id %>/delete"
+                    onsubmit="return confirm('Delete <%= person.full_name %> permanently? This cannot be undone.')">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button class="btn danger small" type="submit">Delete</button>
+              </form>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/footer') %>

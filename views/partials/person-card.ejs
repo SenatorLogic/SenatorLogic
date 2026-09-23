@@ -1,0 +1,8 @@
+<%# One member in a grid. Links to the full profile when signed in. %>
+<% const tag = currentUser ? 'a' : 'div'; %>
+<<%= tag %> class="card person" <% if (currentUser) { %>href="/members/<%= person.id %>"<% } %>>
+  <%- include('avatar', { person, avatarSize: '' }) %>
+  <p class="name"><%= person.full_name %></p>
+  <% if (person.office) { %><span class="office"><%= person.office %></span><% } %>
+  <% if (person.occupation) { %><p class="meta"><%= person.occupation %></p><% } %>
+</<%= tag %>>

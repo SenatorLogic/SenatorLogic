@@ -1,0 +1,23 @@
+<%- include('partials/header') %>
+
+<div class="section-head">
+  <div>
+    <p class="eyebrow">Noticeboard</p>
+    <h1>News &amp; updates</h1>
+  </div>
+  <% if (currentUser && currentUser.is_admin) { %>
+    <a class="btn" href="/admin/news/new">Post an update</a>
+  <% } %>
+</div>
+
+<% if (posts.length) { %>
+  <div class="grid">
+    <% posts.forEach((post) => { %>
+      <%- include('partials/post-item', { post }) %>
+    <% }) %>
+  </div>
+<% } else { %>
+  <div class="card empty"><p>No updates have been posted yet.</p></div>
+<% } %>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,37 @@
+<%- include('partials/header') %>
+
+<div class="section-head">
+  <div>
+    <p class="eyebrow">Diary</p>
+    <h1>Events</h1>
+  </div>
+  <% if (currentUser && currentUser.is_admin) { %>
+    <a class="btn" href="/admin/events/new">Add an event</a>
+  <% } %>
+</div>
+
+<section class="section">
+  <h2>Upcoming</h2>
+  <% if (upcoming.length) { %>
+    <div class="grid">
+      <% upcoming.forEach((event) => { %>
+        <%- include('partials/event-item', { event }) %>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="card empty"><p>Nothing is scheduled at the moment.</p></div>
+  <% } %>
+</section>
+
+<% if (past.length) { %>
+  <section class="section">
+    <h2>Past events</h2>
+    <div class="grid">
+      <% past.forEach((event) => { %>
+        <%- include('partials/event-item', { event }) %>
+      <% }) %>
+    </div>
+  </section>
+<% } %>
+
+<%- include('partials/footer') %>

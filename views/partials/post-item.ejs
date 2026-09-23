@@ -1,0 +1,8 @@
+<%# One news update in a list. %>
+<article class="card post-item">
+  <h3><a href="/news/<%= post.id %>"><%= post.title %></a></h3>
+  <p class="byline">
+    <%= formatDate(post.published_at) %><% if (post.author_name) { %> · <%= post.author_name %><% } %>
+  </p>
+  <p class="excerpt"><%= post.body.length > 180 ? post.body.slice(0, 180) + '…' : post.body %></p>
+</article>

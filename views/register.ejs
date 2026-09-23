@@ -1,0 +1,54 @@
+<%- include('partials/header') %>
+
+<div class="card form-card">
+  <h1>Create your profile</h1>
+  <p style="color:var(--muted);margin-top:0">
+    Join the OBA Youth Abuja register. You will add your photo and details next.
+  </p>
+
+  <% if (firstUser) { %>
+    <div class="alert info">
+      You are the first person to register, so this account becomes the
+      administrator of the site.
+    </div>
+  <% } %>
+
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+
+  <form method="post" action="/register" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="field">
+      <label for="full_name">Full name</label>
+      <input type="text" id="full_name" name="full_name" value="<%= values.full_name || '' %>"
+             autocomplete="name" required autofocus>
+    </div>
+
+    <div class="field">
+      <label for="email">Email address</label>
+      <input type="email" id="email" name="email" value="<%= values.email || '' %>"
+             autocomplete="email" required>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password"
+               autocomplete="new-password" minlength="8" required>
+        <p class="hint">At least 8 characters.</p>
+      </div>
+      <div class="field">
+        <label for="confirm_password">Repeat password</label>
+        <input type="password" id="confirm_password" name="confirm_password"
+               autocomplete="new-password" minlength="8" required>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn" type="submit">Create my profile</button>
+      <a class="btn ghost" href="/login">I already have an account</a>
+    </div>
+  </form>
+</div>
+
+<%- include('partials/footer') %>

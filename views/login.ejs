@@ -1,0 +1,32 @@
+<%- include('partials/header') %>
+
+<div class="card form-card">
+  <h1>Sign in</h1>
+  <p style="color:var(--muted);margin-top:0">Welcome back to OBA Youth Abuja.</p>
+
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+
+  <form method="post" action="/login" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" name="next" value="<%= next %>">
+
+    <div class="field">
+      <label for="email">Email address</label>
+      <input type="email" id="email" name="email" value="<%= values.email || '' %>"
+             autocomplete="email" required autofocus>
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password"
+             autocomplete="current-password" required>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn" type="submit">Sign in</button>
+      <a class="btn ghost" href="/register">Create an account</a>
+    </div>
+  </form>
+</div>
+
+<%- include('partials/footer') %>

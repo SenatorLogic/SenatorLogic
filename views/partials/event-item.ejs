@@ -1,0 +1,17 @@
+<%# One event in a list. %>
+<% const upcoming = isUpcoming(event.starts_on); %>
+<article class="card event-item">
+  <div class="date-chip <%= upcoming ? '' : 'past' %>">
+    <span class="d"><%= dayOfMonth(event.starts_on) %></span>
+    <span class="m"><%= monthAbbr(event.starts_on) %></span>
+  </div>
+  <div>
+    <h3><a href="/events/<%= event.id %>"><%= event.title %></a></h3>
+    <p class="when">
+      <%= formatDate(event.starts_on) %><% if (event.starts_at) { %> · <%= formatTime(event.starts_at) %><% } %><% if (event.location) { %> · <%= event.location %><% } %>
+    </p>
+    <% if (event.description) { %>
+      <p><%= event.description.length > 160 ? event.description.slice(0, 160) + '…' : event.description %></p>
+    <% } %>
+  </div>
+</article>

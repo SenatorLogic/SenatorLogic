@@ -1,0 +1,29 @@
+<%- include('partials/header') %>
+
+<div class="section-head">
+  <div>
+    <p class="eyebrow">Celebrations</p>
+    <h1>Birthdays in <%= monthName %></h1>
+  </div>
+  <p><%= members.length %> <%= members.length === 1 ? 'member' : 'members' %></p>
+</div>
+
+<% if (members.length) { %>
+  <div class="grid members">
+    <% members.forEach((person) => { %>
+      <a class="card person" href="/members/<%= person.id %>">
+        <%- include('partials/avatar', { person }) %>
+        <p class="name"><%= person.full_name %></p>
+        <span class="office"><%= formatBirthday(person.birthday) %></span>
+        <% if (person.occupation) { %><p class="meta"><%= person.occupation %></p><% } %>
+      </a>
+    <% }) %>
+  </div>
+<% } else { %>
+  <div class="card empty">
+    <p>No member birthdays fall in <%= monthName %>.</p>
+    <a class="btn ghost" href="/profile/edit">Add your birthday</a>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>

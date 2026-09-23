@@ -1,0 +1,22 @@
+<%- include('partials/header') %>
+
+<div class="card form-card wide">
+  <h1>Edit my profile</h1>
+  <p style="color:var(--muted);margin-top:0">
+    These details are visible to other signed-in members of OBA Youth Abuja.
+  </p>
+
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+
+  <form method="post" action="/profile/edit" enctype="multipart/form-data" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <%- include('partials/profile-fields', { values, hasPhoto, relationshipStatuses, genders, communities }) %>
+
+    <div class="form-actions">
+      <button class="btn" type="submit">Save my profile</button>
+      <a class="btn ghost" href="/profile">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<%- include('partials/footer') %>

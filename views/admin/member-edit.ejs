@@ -1,0 +1,44 @@
+<%- include('../partials/header') %>
+
+<div class="card form-card wide">
+  <p class="eyebrow">Administration</p>
+  <h1>Edit <%= member.full_name %></h1>
+  <p style="color:var(--muted);margin-top:0"><%= member.email %></p>
+
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+
+  <form method="post" action="/admin/members/<%= member.id %>/edit"
+        enctype="multipart/form-data" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="field">
+      <label for="office">Executive office</label>
+      <select id="office" name="office">
+        <option value="">Ordinary member</option>
+        <% offices.forEach((o) => { %>
+          <option value="<%= o.name %>" <%= values.office === o.name ? 'selected' : '' %>><%= o.name %></option>
+        <% }) %>
+      </select>
+      <p class="hint">Officers appear on the home page in the order listed here.</p>
+    </div>
+
+    <div class="field">
+      <label class="checkbox">
+        <input type="checkbox" name="is_admin" value="yes" <%= values.is_admin ? 'checked' : '' %>>
+        Administrator — can edit every profile, and post news and events
+      </label>
+    </div>
+
+    <hr style="border:0;border-top:1px solid var(--line);margin:24px 0">
+
+    <%- include('../partials/profile-fields', { values, hasPhoto, relationshipStatuses, genders, communities }) %>
+
+    <div class="form-actions">
+      <button class="btn" type="submit">Save changes</button>
+      <a class="btn ghost" href="/admin/members">Cancel</a>
+      <a class="btn ghost spacer" href="/members/<%= member.id %>">View profile</a>
+    </div>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

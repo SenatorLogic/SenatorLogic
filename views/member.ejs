@@ -1,0 +1,63 @@
+<%- include('partials/header') %>
+<% const self = typeof isSelf !== 'undefined' && isSelf; %>
+<% const canEdit = self || (currentUser && currentUser.is_admin); %>
+
+<div class="card" style="max-width:760px;margin:0 auto">
+  <div class="profile-head">
+    <%- include('partials/avatar', { person: member, avatarSize: 'lg' }) %>
+    <div>
+      <h1><%= member.full_name %></h1>
+      <% if (member.office) { %><span class="office"><%= member.office %></span><% } %>
+      <% if (member.occupation) { %>
+        <p style="margin:10px 0 0;color:var(--ink-soft)"><%= member.occupation %></p>
+      <% } %>
+      <% if (canEdit) { %>
+        <div class="hero-actions" style="margin-top:16px">
+          <% if (self) { %>
+            <a class="btn" href="/profile/edit">Edit my profile</a>
+            <a class="btn ghost" href="/profile/password">Change password</a>
+          <% } else { %>
+            <a class="btn" href="/admin/members/<%= member.id %>/edit">Edit this profile</a>
+          <% } %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <ul class="facts">
+    <% const facts = [
+         ['Email', member.email],
+         ['Phone', member.phone],
+         ['Gender', member.gender],
+         ['Occupation', member.occupation],
+         ['Relationship status', member.relationship_status],
+         ['Birthday', formatBirthday(member.birthday)],
+         ['Address in Abuja', member.address],
+         ['Home in Obowo', member.obowo_address],
+       ]; %>
+    <% facts.forEach(([label, value]) => { %>
+      <li>
+        <span class="label"><%= label %></span>
+        <span class="value"><%= value || '—' %></span>
+      </li>
+    <% }) %>
+    <% if (member.about) { %>
+      <li>
+        <span class="label">About</span>
+        <span class="value"><%= member.about %></span>
+      </li>
+    <% } %>
+    <li>
+      <span class="label">Member since</span>
+      <span class="value"><%= formatDate(member.created_at) %></span>
+    </li>
+  </ul>
+</div>
+
+<% if (!self) { %>
+  <p style="text-align:center;margin-top:24px">
+    <a class="btn ghost" href="/members">Back to members</a>
+  </p>
+<% } %>
+
+<%- include('partials/footer') %>

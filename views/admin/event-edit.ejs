@@ -1,0 +1,59 @@
+<%- include('../partials/header') %>
+
+<div class="card form-card wide">
+  <p class="eyebrow">Events</p>
+  <h1><%= event ? 'Edit event' : 'Add an event' %></h1>
+
+  <% if (error) { %><div class="alert error"><%= error %></div><% } %>
+
+  <form method="post" action="<%= event ? `/admin/events/${event.id}/edit` : '/admin/events/new' %>" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="field">
+      <label for="title">Event title</label>
+      <input type="text" id="title" name="title" value="<%= values.title || '' %>"
+             placeholder="e.g. Monthly general meeting" required autofocus>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="starts_on">Date</label>
+        <input type="date" id="starts_on" name="starts_on" value="<%= values.starts_on || '' %>" required>
+      </div>
+      <div class="field">
+        <label for="starts_at">Time</label>
+        <input type="time" id="starts_at" name="starts_at" value="<%= values.starts_at || '' %>">
+        <p class="hint">Optional.</p>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="location">Venue</label>
+      <input type="text" id="location" name="location" value="<%= values.location || '' %>"
+             placeholder="e.g. Parish hall, Wuse Zone 3, Abuja">
+    </div>
+
+    <div class="field">
+      <label for="description">Details</label>
+      <textarea id="description" name="description" style="min-height:200px"><%= values.description || '' %></textarea>
+      <p class="hint">Leave a blank line between paragraphs.</p>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn" type="submit"><%= event ? 'Save changes' : 'Add event' %></button>
+      <a class="btn ghost" href="/events">Cancel</a>
+      <% if (event) { %>
+        <button class="btn danger spacer" type="submit" form="delete-event">Delete</button>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (event) { %>
+    <form id="delete-event" method="post" action="/admin/events/<%= event.id %>/delete"
+          onsubmit="return confirm('Delete this event permanently?')">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    </form>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,22 @@
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <strong>OBA Youth Abuja</strong><br>
+      Obowo Believers Association — Abuja youth chapter
+    </div>
+    <div>
+      <a href="/">Home</a> ·
+      <a href="/news">News</a> ·
+      <a href="/events">Events</a> ·
+      <% if (currentUser) { %><a href="/members">Members</a><% } else { %><a href="/register">Join</a><% } %>
+    </div>
+    <div>&copy; <%= new Date().getFullYear() %> OBA Youth Abuja</div>
+  </div>
+</footer>
+
+<script src="/js/app.js" defer></script>
+</body>
+</html>

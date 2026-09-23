@@ -1,0 +1,8 @@
+<%# Member photo, falling back to their initials. %>
+<% const size = typeof avatarSize === 'undefined' ? '' : avatarSize; %>
+<% if (person.has_photo) { %>
+  <img class="avatar <%= size %>" src="/photo/<%= person.id %>"
+       alt="Photo of <%= person.full_name %>" loading="lazy" width="96" height="96">
+<% } else { %>
+  <div class="avatar <%= size %>" aria-hidden="true"><%= initials(person.full_name) %></div>
+<% } %>
