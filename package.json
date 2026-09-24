@@ -6,7 +6,7 @@
   "main": "src/server.js",
   "type": "commonjs",
   "engines": {
-    "node": ">=22.5"
+    "node": ">=20"
   },
   "scripts": {
     "start": "node src/server.js",
@@ -15,9 +15,11 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "connect-pg-simple": "^10.0.0",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "pg": "^8.23.0"
   }
 }

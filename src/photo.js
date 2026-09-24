@@ -1,7 +1,7 @@
 'use strict';
 
 const multer = require('multer');
-const { db } = require('./db');
+const { one, query } = require('./db');
 
 const MAX_PHOTO_BYTES = 4 * 1024 * 1024; // 4 MB
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -33,20 +33,28 @@ function sniffImageType(buffer) {
   return null;
 }
 
-const stmts = {
-  save: db.prepare(`
-    INSERT INTO photos (user_id, mime, bytes, updated_at)
-    VALUES (?, ?, ?, datetime('now'))
-    ON CONFLICT(user_id) DO UPDATE SET
-      mime = excluded.mime, bytes = excluded.bytes, updated_at = excluded.updated_at
-  `),
-  remove: db.prepare('DELETE FROM photos WHERE user_id = ?'),
-  exists: db.prepare('SELECT 1 AS ok FROM photos WHERE user_id = ?'),
-};
+const savePhoto = (userId, mime, bytes) =>
+  query(
+    `INSERT INTO photos (user_id, mime, bytes, updated_at)
+     VALUES ($1, $2, $3, NOW())
+     ON CONFLICT (user_id) DO UPDATE SET
+       mime = EXCLUDED.mime, bytes = EXCLUDED.bytes, updated_at = EXCLUDED.updated_at`,
+    [userId, mime, bytes]
+  );
 
-const savePhoto = (userId, mime, bytes) => stmts.save.run(userId, mime, bytes);
-const deletePhoto = (userId) => stmts.remove.run(userId);
-const hasPhoto = (userId) => Boolean(stmts.exists.get(userId));
+const deletePhoto = (userId) =>
+  query('DELETE FROM photos WHERE user_id = $1', [userId]);
+
+const hasPhoto = async (userId) =>
+  Boolean(await one('SELECT 1 FROM photos WHERE user_id = $1', [userId]));
+
+const getPhoto = (userId) =>
+  one(
+    `SELECT p.mime, p.bytes, p.updated_at, u.office_rank
+     FROM photos p JOIN users u ON u.id = p.user_id
+     WHERE p.user_id = $1`,
+    [userId]
+  );
 
 /**
  * Runs the single-file upload without letting a bad file abort the request —
@@ -66,17 +74,17 @@ function acceptPhoto(req, res, next) {
 
 /**
  * Applies the photo part of a submitted profile form.
- * Returns an error message, or null when there was nothing wrong.
+ * Resolves to an error message, or null when there was nothing wrong.
  */
-function applyPhotoChange(req, userId) {
+async function applyPhotoChange(req, userId) {
   if (req.uploadError) return req.uploadError;
 
   if (req.file) {
     const mime = sniffImageType(req.file.buffer);
     if (!mime) return 'That file is not a valid JPG, PNG or WEBP image.';
-    savePhoto(userId, mime, req.file.buffer);
+    await savePhoto(userId, mime, req.file.buffer);
   } else if (req.body.remove_photo === 'yes') {
-    deletePhoto(userId);
+    await deletePhoto(userId);
   }
   return null;
 }
@@ -87,6 +95,7 @@ module.exports = {
   savePhoto,
   deletePhoto,
   hasPhoto,
+  getPhoto,
   sniffImageType,
   MAX_PHOTO_BYTES,
 };

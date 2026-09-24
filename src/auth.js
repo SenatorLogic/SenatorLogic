@@ -1,7 +1,7 @@
 'use strict';
 
 const bcrypt = require('bcryptjs');
-const { db } = require('./db');
+const { one } = require('./db');
 
 const ROUNDS = 12;
 
@@ -16,32 +16,31 @@ const PUBLIC_COLUMNS = `
   EXISTS(SELECT 1 FROM photos WHERE photos.user_id = users.id) AS has_photo
 `;
 
-const stmts = {
-  byId: db.prepare(`SELECT ${PUBLIC_COLUMNS} FROM users WHERE id = ?`),
-  byEmail: db.prepare('SELECT * FROM users WHERE email = ?'),
-};
-
 function findUserById(id) {
-  return stmts.byId.get(id) || null;
+  return one(`SELECT ${PUBLIC_COLUMNS} FROM users WHERE id = $1`, [id]);
 }
 
 function findUserByEmail(email) {
-  return stmts.byEmail.get(String(email).trim().toLowerCase()) || null;
+  return one('SELECT * FROM users WHERE email = $1', [
+    String(email).trim().toLowerCase(),
+  ]);
 }
 
 /** Attaches req.user (or null) and the view locals every page needs. */
-function attachUser(req, res, next) {
-  const id = req.session?.userId;
-  req.user = id ? findUserById(id) : null;
+async function attachUser(req, res, next) {
+  try {
+    const id = req.session?.userId;
+    req.user = id ? await findUserById(id) : null;
 
-  // A deleted account with a live cookie: clear it out.
-  if (id && !req.user) {
-    req.session.userId = null;
+    // A deleted account with a live cookie: clear it out.
+    if (id && !req.user) req.session.userId = null;
+
+    res.locals.currentUser = req.user;
+    res.locals.path = req.path;
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  res.locals.currentUser = req.user;
-  res.locals.path = req.path;
-  next();
 }
 
 function requireLogin(req, res, next) {

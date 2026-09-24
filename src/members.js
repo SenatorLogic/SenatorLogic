@@ -1,6 +1,6 @@
 'use strict';
 
-const { db } = require('./db');
+const { one, all, query } = require('./db');
 const { PUBLIC_COLUMNS } = require('./auth');
 const {
   RELATIONSHIP_STATUSES,
@@ -8,42 +8,26 @@ const {
   OBOWO_COMMUNITIES,
 } = require('./constants');
 
-const stmts = {
-  updateProfile: db.prepare(`
-    UPDATE users SET
-      full_name = ?, phone = ?, gender = ?, occupation = ?, address = ?,
-      obowo_address = ?, relationship_status = ?, birthday = ?, about = ?,
-      updated_at = datetime('now')
-    WHERE id = ?
-  `),
-  setOffice: db.prepare(
-    "UPDATE users SET office = ?, office_rank = ?, updated_at = datetime('now') WHERE id = ?"
-  ),
-  setAdmin: db.prepare(
-    "UPDATE users SET is_admin = ?, updated_at = datetime('now') WHERE id = ?"
-  ),
-  byId: db.prepare(`SELECT ${PUBLIC_COLUMNS} FROM users WHERE id = ?`),
-  remove: db.prepare('DELETE FROM users WHERE id = ?'),
-  adminCount: db.prepare('SELECT COUNT(*) AS n FROM users WHERE is_admin = 1'),
-  all: db.prepare(`
-    SELECT ${PUBLIC_COLUMNS} FROM users
-    ORDER BY (office_rank = 0) ASC, office_rank ASC, full_name ASC
-  `),
-};
-
 /** Writes the profile fields a member (or an admin on their behalf) may change. */
-function saveProfileFields(userId, profile) {
-  stmts.updateProfile.run(
-    profile.full_name,
-    profile.phone,
-    profile.gender,
-    profile.occupation,
-    profile.address,
-    profile.obowo_address,
-    profile.relationship_status,
-    profile.birthday,
-    profile.about,
-    userId
+function saveProfileFields(userId, p) {
+  return query(
+    `UPDATE users SET
+       full_name = $1, phone = $2, gender = $3, occupation = $4, address = $5,
+       obowo_address = $6, relationship_status = $7, birthday = $8, about = $9,
+       updated_at = NOW()
+     WHERE id = $10`,
+    [
+      p.full_name,
+      p.phone,
+      p.gender,
+      p.occupation,
+      p.address,
+      p.obowo_address,
+      p.relationship_status,
+      p.birthday,
+      p.about,
+      userId,
+    ]
   );
 }
 
@@ -54,13 +38,41 @@ const formOptions = {
   communities: OBOWO_COMMUNITIES,
 };
 
+const getMember = (id) =>
+  one(`SELECT ${PUBLIC_COLUMNS} FROM users WHERE id = $1`, [id]);
+
+const allMembers = () =>
+  all(`SELECT ${PUBLIC_COLUMNS} FROM users
+       ORDER BY (office_rank = 0), office_rank, full_name`);
+
+const setOffice = (id, office, rank) =>
+  query(
+    'UPDATE users SET office = $1, office_rank = $2, updated_at = NOW() WHERE id = $3',
+    [office, rank, id]
+  );
+
+const setAdmin = (id, isAdmin) =>
+  query('UPDATE users SET is_admin = $1, updated_at = NOW() WHERE id = $2', [
+    Boolean(isAdmin),
+    id,
+  ]);
+
+const deleteMember = (id) => query('DELETE FROM users WHERE id = $1', [id]);
+
+const adminCount = async () =>
+  Number((await one('SELECT COUNT(*)::int AS n FROM users WHERE is_admin')).n);
+
+const memberCount = async () =>
+  Number((await one('SELECT COUNT(*)::int AS n FROM users')).n);
+
 module.exports = {
   saveProfileFields,
   formOptions,
-  getMember: (id) => stmts.byId.get(id) || null,
-  allMembers: () => stmts.all.all(),
-  setOffice: (id, office, rank) => stmts.setOffice.run(office, rank, id),
-  setAdmin: (id, isAdmin) => stmts.setAdmin.run(isAdmin ? 1 : 0, id),
-  deleteMember: (id) => stmts.remove.run(id),
-  adminCount: () => stmts.adminCount.get().n,
+  getMember,
+  allMembers,
+  setOffice,
+  setAdmin,
+  deleteMember,
+  adminCount,
+  memberCount,
 };

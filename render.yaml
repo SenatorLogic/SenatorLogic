@@ -1,11 +1,15 @@
-# One-click deploy for Render (https://render.com).
-# The free plan does not include a persistent disk — use the starter plan or
-# larger so the member database survives a restart.
+# One-click deploy for Render (https://render.com) on the free plan.
+#
+# The member data lives in a free Neon Postgres database, not on this server's
+# disk, so nothing is lost when Render restarts or redeploys the free instance.
+#
+# Before deploying: create a free project at https://neon.tech and have its
+# pooled connection string ready — Render asks for DATABASE_URL during setup.
 services:
   - type: web
     name: oba-youth-abuja
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm ci --omit=dev
     startCommand: node src/server.js
     healthCheckPath: /healthz
@@ -14,11 +18,9 @@ services:
         value: production
       - key: SESSION_SECRET
         generateValue: true
-      - key: DATABASE_FILE
-        value: /var/data/oba.db
+      # Paste the Neon pooled connection string when Render prompts for this.
+      - key: DATABASE_URL
+        sync: false
+      # Your email, so you stay an administrator after any redeploy.
       - key: ADMIN_EMAIL
         sync: false
-    disk:
-      name: oba-data
-      mountPath: /var/data
-      sizeGB: 1

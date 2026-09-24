@@ -1,6 +1,6 @@
 'use strict';
 
-const { db } = require('./db');
+const { one, all, query } = require('./db');
 
 const POST_COLUMNS = `
   p.id, p.title, p.body, p.published_at, p.updated_at,
@@ -12,83 +12,91 @@ const EVENT_COLUMNS = `
   e.created_at, u.full_name AS created_by_name
 `;
 
-const stmts = {
-  latestPosts: db.prepare(`
-    SELECT ${POST_COLUMNS} FROM posts p
-    LEFT JOIN users u ON u.id = p.author_id
-    ORDER BY p.published_at DESC, p.id DESC LIMIT ?
-  `),
-  allPosts: db.prepare(`
-    SELECT ${POST_COLUMNS} FROM posts p
-    LEFT JOIN users u ON u.id = p.author_id
-    ORDER BY p.published_at DESC, p.id DESC
-  `),
-  post: db.prepare(`
-    SELECT ${POST_COLUMNS} FROM posts p
-    LEFT JOIN users u ON u.id = p.author_id
-    WHERE p.id = ?
-  `),
-  insertPost: db.prepare(
-    'INSERT INTO posts (title, body, author_id) VALUES (?, ?, ?)'
-  ),
-  updatePost: db.prepare(
-    "UPDATE posts SET title = ?, body = ?, updated_at = datetime('now') WHERE id = ?"
-  ),
-  deletePost: db.prepare('DELETE FROM posts WHERE id = ?'),
-
-  upcomingEvents: db.prepare(`
-    SELECT ${EVENT_COLUMNS} FROM events e
-    LEFT JOIN users u ON u.id = e.created_by
-    WHERE e.starts_on >= ?
-    ORDER BY e.starts_on ASC, e.starts_at ASC LIMIT ?
-  `),
-  pastEvents: db.prepare(`
-    SELECT ${EVENT_COLUMNS} FROM events e
-    LEFT JOIN users u ON u.id = e.created_by
-    WHERE e.starts_on < ?
-    ORDER BY e.starts_on DESC, e.starts_at DESC LIMIT ?
-  `),
-  allEvents: db.prepare(`
-    SELECT ${EVENT_COLUMNS} FROM events e
-    LEFT JOIN users u ON u.id = e.created_by
-    ORDER BY e.starts_on DESC, e.starts_at DESC
-  `),
-  event: db.prepare(`
-    SELECT ${EVENT_COLUMNS} FROM events e
-    LEFT JOIN users u ON u.id = e.created_by
-    WHERE e.id = ?
-  `),
-  insertEvent: db.prepare(`
-    INSERT INTO events (title, description, starts_on, starts_at, location, created_by)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `),
-  updateEvent: db.prepare(`
-    UPDATE events SET
-      title = ?, description = ?, starts_on = ?, starts_at = ?, location = ?,
-      updated_at = datetime('now')
-    WHERE id = ?
-  `),
-  deleteEvent: db.prepare('DELETE FROM events WHERE id = ?'),
-};
+const POST_FROM = `FROM posts p LEFT JOIN users u ON u.id = p.author_id`;
+const EVENT_FROM = `FROM events e LEFT JOIN users u ON u.id = e.created_by`;
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-module.exports = {
-  latestPosts: (limit = 3) => stmts.latestPosts.all(limit),
-  allPosts: () => stmts.allPosts.all(),
-  getPost: (id) => stmts.post.get(id) || null,
-  createPost: (title, body, authorId) =>
-    stmts.insertPost.run(title, body, authorId),
-  updatePost: (id, title, body) => stmts.updatePost.run(title, body, id),
-  deletePost: (id) => stmts.deletePost.run(id),
+const latestPosts = (limit = 3) =>
+  all(
+    `SELECT ${POST_COLUMNS} ${POST_FROM}
+     ORDER BY p.published_at DESC, p.id DESC LIMIT $1`,
+    [limit]
+  );
 
-  upcomingEvents: (limit = 3) => stmts.upcomingEvents.all(today(), limit),
-  pastEvents: (limit = 20) => stmts.pastEvents.all(today(), limit),
-  allEvents: () => stmts.allEvents.all(),
-  getEvent: (id) => stmts.event.get(id) || null,
-  createEvent: (e, userId) =>
-    stmts.insertEvent.run(e.title, e.description, e.starts_on, e.starts_at, e.location, userId),
-  updateEvent: (id, e) =>
-    stmts.updateEvent.run(e.title, e.description, e.starts_on, e.starts_at, e.location, id),
-  deleteEvent: (id) => stmts.deleteEvent.run(id),
+const allPosts = () =>
+  all(`SELECT ${POST_COLUMNS} ${POST_FROM} ORDER BY p.published_at DESC, p.id DESC`);
+
+const getPost = (id) =>
+  one(`SELECT ${POST_COLUMNS} ${POST_FROM} WHERE p.id = $1`, [id]);
+
+const createPost = (title, body, authorId) =>
+  query('INSERT INTO posts (title, body, author_id) VALUES ($1, $2, $3)', [
+    title,
+    body,
+    authorId,
+  ]);
+
+const updatePost = (id, title, body) =>
+  query(
+    'UPDATE posts SET title = $1, body = $2, updated_at = NOW() WHERE id = $3',
+    [title, body, id]
+  );
+
+const deletePost = (id) => query('DELETE FROM posts WHERE id = $1', [id]);
+
+const upcomingEvents = (limit = 3) =>
+  all(
+    `SELECT ${EVENT_COLUMNS} ${EVENT_FROM}
+     WHERE e.starts_on >= $1
+     ORDER BY e.starts_on, e.starts_at LIMIT $2`,
+    [today(), limit]
+  );
+
+const pastEvents = (limit = 20) =>
+  all(
+    `SELECT ${EVENT_COLUMNS} ${EVENT_FROM}
+     WHERE e.starts_on < $1
+     ORDER BY e.starts_on DESC, e.starts_at DESC LIMIT $2`,
+    [today(), limit]
+  );
+
+const allEvents = () =>
+  all(`SELECT ${EVENT_COLUMNS} ${EVENT_FROM} ORDER BY e.starts_on DESC, e.starts_at DESC`);
+
+const getEvent = (id) =>
+  one(`SELECT ${EVENT_COLUMNS} ${EVENT_FROM} WHERE e.id = $1`, [id]);
+
+const createEvent = (e, userId) =>
+  query(
+    `INSERT INTO events (title, description, starts_on, starts_at, location, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [e.title, e.description, e.starts_on, e.starts_at, e.location, userId]
+  );
+
+const updateEvent = (id, e) =>
+  query(
+    `UPDATE events SET
+       title = $1, description = $2, starts_on = $3, starts_at = $4,
+       location = $5, updated_at = NOW()
+     WHERE id = $6`,
+    [e.title, e.description, e.starts_on, e.starts_at, e.location, id]
+  );
+
+const deleteEvent = (id) => query('DELETE FROM events WHERE id = $1', [id]);
+
+module.exports = {
+  latestPosts,
+  allPosts,
+  getPost,
+  createPost,
+  updatePost,
+  deletePost,
+  upcomingEvents,
+  pastEvents,
+  allEvents,
+  getEvent,
+  createEvent,
+  updateEvent,
+  deleteEvent,
 };

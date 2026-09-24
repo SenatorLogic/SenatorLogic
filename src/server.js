@@ -4,8 +4,9 @@ const path = require('node:path');
 
 const express = require('express');
 const session = require('express-session');
+const PgSession = require('connect-pg-simple')(session);
 
-const SqliteStore = require('./session-store');
+const { pool, migrate } = require('./db');
 const { attachUser } = require('./auth');
 const csrf = require('./csrf');
 const { ensureFirstAdmin } = require('./bootstrap');
@@ -14,7 +15,7 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const IN_PRODUCTION = process.env.NODE_ENV === 'production';
 
-// Behind Render/Railway/Fly/Nginx the secure cookie needs the forwarded proto.
+// Behind Render/Fly/Nginx the secure cookie needs the forwarded proto.
 app.set('trust proxy', 1);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '..', 'views'));
@@ -40,7 +41,7 @@ app.use(
   session({
     name: 'oba.sid',
     secret: process.env.SESSION_SECRET || 'dev-only-insecure-secret',
-    store: new SqliteStore(),
+    store: new PgSession({ pool, tableName: 'session', createTableIfMissing: false }),
     resave: false,
     saveUninitialized: false,
     rolling: true,
@@ -94,11 +95,20 @@ app.use((err, req, res, next) => {
   });
 });
 
-if (require.main === module) {
-  ensureFirstAdmin();
+async function start() {
+  await migrate();
+  await ensureFirstAdmin();
   app.listen(PORT, () => {
     console.log(`OBA Youth Abuja running on http://localhost:${PORT}`);
   });
 }
 
+if (require.main === module) {
+  start().catch((err) => {
+    console.error('Could not start:', err.message);
+    process.exit(1);
+  });
+}
+
 module.exports = app;
+module.exports.start = start;

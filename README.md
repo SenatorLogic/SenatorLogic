@@ -41,12 +41,13 @@ administrator grants the rights to anyone else.
 
 ## Running it locally
 
-Needs **Node.js 22.5 or newer** (it uses Node's built-in SQLite, so there is
-nothing to compile and no database server to install).
+Needs **Node.js 20 or newer** and a Postgres database. The free one from
+[Neon](https://neon.tech) works for local development too — no need to install
+Postgres on your machine.
 
 ```bash
 npm install
-cp .env.example .env     # then set SESSION_SECRET
+cp .env.example .env     # then set DATABASE_URL and SESSION_SECRET
 npm start                # http://localhost:3000
 ```
 
@@ -63,10 +64,11 @@ already has members.
 
 ## Tests
 
-With the server running on port 3311:
+With the server running on port 3311, pointed at a database you don't mind
+emptying:
 
 ```bash
-PORT=3311 npm start &
+DATABASE_URL=... PORT=3311 npm start &
 BASE=http://localhost:3311 ./test/smoke.sh
 ```
 
@@ -80,10 +82,10 @@ Everything is set through environment variables — see `.env.example`.
 
 | Variable | Purpose |
 | --- | --- |
+| `DATABASE_URL` | Postgres connection string. **Required** — the server refuses to start without it. |
 | `SESSION_SECRET` | Signs session cookies. **Required in production**; the server refuses to start without it. |
 | `PORT` | Port to listen on. Default `3000`. |
 | `NODE_ENV` | Set to `production` when deployed. Turns on secure cookies. |
-| `DATABASE_FILE` | Where the SQLite file lives. Default `./data/oba.db`. |
 | `ADMIN_EMAIL` | This account is made an administrator each time the server starts — a way back in if admin access is ever lost. |
 
 Generate a secret with:
@@ -92,60 +94,77 @@ Generate a secret with:
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
-## Hosting
+## Hosting — free
 
-All member data, including photos, lives in one SQLite file. **The host must
-give that file a persistent disk**, or everything is lost on each redeploy.
+The app keeps no data on its own disk, so it can run on a free host that wipes
+its filesystem on every restart. Everything lives in Postgres.
 
-Three ready-made options are included:
+**1. Create the database (free, no card).**
+Sign up at [neon.tech](https://neon.tech) with GitHub, create a project, and
+copy the **pooled** connection string. It looks like:
 
-- **Render** — `render.yaml` is a blueprint. Create a new Blueprint instance
-  from this repository; it provisions a 1 GB disk at `/var/data` and generates
-  `SESSION_SECRET` for you. Needs the Starter plan or above, because the free
-  plan has no persistent disk.
-- **Fly.io** — `fly.toml` plus the `Dockerfile`. The comments at the top of
-  `fly.toml` list the four commands.
-- **Any Docker host** — build the image and mount a volume at `/data`:
+```
+postgresql://user:password@ep-xxx-pooler.region.aws.neon.tech/dbname?sslmode=require
+```
 
-  ```bash
-  docker build -t oba-youth .
-  docker run -p 3000:3000 -v oba-data:/data \
-    -e SESSION_SECRET="$(node -e 'console.log(require("crypto").randomBytes(48).toString("hex"))')" \
-    oba-youth
-  ```
+**2. Deploy the app (free, no card).**
+Sign up at [render.com](https://render.com) with GitHub, then
+**New → Blueprint** and pick this repository. Render reads `render.yaml`,
+creates the service on the free plan and asks for two values:
 
-Put the app behind HTTPS. It sets `trust proxy`, so a normal reverse proxy or
-platform router works as-is.
+- `DATABASE_URL` — the Neon string from step 1
+- `ADMIN_EMAIL` — your email, so you stay an administrator after any redeploy
+
+It generates `SESSION_SECRET` by itself. The tables are created automatically
+the first time the app starts.
+
+**3. Register.** Open the site and sign up. The first account is the
+administrator.
+
+### What "free" costs you
+
+- **The app sleeps.** After about 15 minutes with no visitors, Render stops the
+  free instance. The next person to open the site waits roughly 30–50 seconds
+  while it wakes up; after that it is fast until it goes quiet again.
+- **Neon's free database** pauses when idle too, and wakes in a second or two.
+  It gives 0.5 GB of storage — enough for thousands of members with photos.
+
+Upgrading later is a plan change on Render, not a rebuild. Nothing in the code
+changes and no data moves.
+
+### Other hosts
+
+`Dockerfile` and `fly.toml` are included if you would rather use
+[Fly.io](https://fly.io) (roughly $3/month, no sleeping) or any Docker host.
+Set `DATABASE_URL` and `SESSION_SECRET` and it runs.
 
 ### Backing up
 
-The whole database is one file. To copy it off a running server:
+Neon keeps its own point-in-time backups, but take your own copies too:
 
 ```bash
-sqlite3 /var/data/oba.db ".backup '/tmp/oba-backup.db'"
+pg_dump "$DATABASE_URL" > oba-backup.sql
 ```
 
-Keep those backups somewhere off the server — they contain members' personal
-details.
+Keep them somewhere off the server — they contain members' personal details.
 
 ## How it is built
 
 No build step, no framework, no native dependencies.
 
 - **Express 4** with **EJS** templates rendered on the server
-- **SQLite** through Node's built-in `node:sqlite`
+- **Postgres** through `pg`, with the schema created on first boot
 - **bcryptjs** for password hashing
 - **multer** for photo uploads, held in memory and written into the database
-- Sessions kept in SQLite through a small custom store, so members stay signed
-  in across restarts
+- Sessions kept in Postgres (`connect-pg-simple`), so members stay signed in
+  across restarts and redeploys
 
 ```
 src/
   server.js        app setup, middleware order, error handling
-  db.js            database file and schema
+  db.js            connection pool, schema and query helpers
   auth.js          password hashing, the signed-in user, route guards
   csrf.js          per-session form tokens
-  session-store.js SQLite-backed session store
   members.js       member queries shared by the member and admin routes
   content.js       news and event queries
   photo.js         upload handling and image sniffing
@@ -168,7 +187,7 @@ test/smoke.sh      end-to-end checks
 - The session id is regenerated on sign-in and sign-up.
 - Uploaded photos are checked against their real magic bytes, not the
   browser's claimed type, and capped at 4 MB.
-- Search terms are escaped before they reach a SQL `LIKE`, and every query
+- Search terms are escaped before they reach a SQL `ILIKE`, and every query
   uses bound parameters.
 - Member photos are private to signed-in members; only executives' photos are
   public, because they appear on the home page.

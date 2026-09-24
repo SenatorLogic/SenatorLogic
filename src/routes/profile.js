@@ -2,7 +2,7 @@
 
 const express = require('express');
 
-const { db } = require('../db');
+const { one, query } = require('../db');
 const { requireLogin, hashPassword, verifyPassword } = require('../auth');
 const { cleanProfile } = require('../validate');
 const { acceptPhoto, applyPhotoChange, hasPhoto } = require('../photo');
@@ -11,12 +11,7 @@ const { saveProfileFields, formOptions } = require('../members');
 
 const router = express.Router();
 
-const stmts = {
-  updatePassword: db.prepare(
-    "UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?"
-  ),
-  passwordHash: db.prepare('SELECT password_hash FROM users WHERE id = ?'),
-};
+const wrap = (fn) => (req, res, next) => fn(req, res, next).catch(next);
 
 router.get('/profile', requireLogin, (req, res) => {
   res.render('member', {
@@ -26,52 +21,66 @@ router.get('/profile', requireLogin, (req, res) => {
   });
 });
 
-router.get('/profile/edit', requireLogin, (req, res) => {
-  res.render('profile-edit', {
-    title: 'Edit my profile',
-    values: req.user,
-    error: null,
-    hasPhoto: hasPhoto(req.user.id),
-    ...formOptions,
-  });
-});
-
-router.post('/profile/edit', requireLogin, acceptPhoto, requireToken, (req, res) => {
-  const profile = cleanProfile(req.body);
-
-  const rerender = (error) =>
-    res.status(400).render('profile-edit', {
+router.get(
+  '/profile/edit',
+  requireLogin,
+  wrap(async (req, res) => {
+    res.render('profile-edit', {
       title: 'Edit my profile',
-      values: { ...req.user, ...profile },
-      error,
-      hasPhoto: hasPhoto(req.user.id),
+      values: req.user,
+      error: null,
+      hasPhoto: await hasPhoto(req.user.id),
       ...formOptions,
     });
+  })
+);
 
-  if (!profile.full_name) return rerender('Please enter your full name.');
+router.post(
+  '/profile/edit',
+  requireLogin,
+  acceptPhoto,
+  requireToken,
+  wrap(async (req, res) => {
+    const profile = cleanProfile(req.body);
 
-  const photoError = applyPhotoChange(req, req.user.id);
-  if (photoError) return rerender(photoError);
+    const rerender = async (error) =>
+      res.status(400).render('profile-edit', {
+        title: 'Edit my profile',
+        values: { ...req.user, ...profile },
+        error,
+        hasPhoto: await hasPhoto(req.user.id),
+        ...formOptions,
+      });
 
-  saveProfileFields(req.user.id, profile);
-  req.session.flash = { type: 'success', message: 'Your profile is saved.' };
-  res.redirect('/profile');
-});
+    if (!profile.full_name) return rerender('Please enter your full name.');
+
+    const photoError = await applyPhotoChange(req, req.user.id);
+    if (photoError) return rerender(photoError);
+
+    await saveProfileFields(req.user.id, profile);
+    req.session.flash = { type: 'success', message: 'Your profile is saved.' };
+    res.redirect('/profile');
+  })
+);
 
 router.get('/profile/password', requireLogin, (req, res) => {
   res.render('password', { title: 'Change password', error: null });
 });
 
-router.post('/profile/password', requireLogin, async (req, res, next) => {
-  const current = String(req.body.current_password || '');
-  const chosen = String(req.body.new_password || '');
-  const confirm = String(req.body.confirm_password || '');
+router.post(
+  '/profile/password',
+  requireLogin,
+  wrap(async (req, res) => {
+    const current = String(req.body.current_password || '');
+    const chosen = String(req.body.new_password || '');
+    const confirm = String(req.body.confirm_password || '');
 
-  const fail = (error) =>
-    res.status(400).render('password', { title: 'Change password', error });
+    const fail = (error) =>
+      res.status(400).render('password', { title: 'Change password', error });
 
-  try {
-    const row = stmts.passwordHash.get(req.user.id);
+    const row = await one('SELECT password_hash FROM users WHERE id = $1', [
+      req.user.id,
+    ]);
     if (!(await verifyPassword(current, row.password_hash))) {
       return fail('Your current password is not correct.');
     }
@@ -80,12 +89,13 @@ router.post('/profile/password', requireLogin, async (req, res, next) => {
     }
     if (chosen !== confirm) return fail('The two new passwords do not match.');
 
-    stmts.updatePassword.run(await hashPassword(chosen), req.user.id);
+    await query(
+      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+      [await hashPassword(chosen), req.user.id]
+    );
     req.session.flash = { type: 'success', message: 'Your password is changed.' };
     res.redirect('/profile');
-  } catch (err) {
-    next(err);
-  }
-});
+  })
+);
 
 module.exports = router;
